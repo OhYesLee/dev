@@ -1,0 +1,9 @@
+{
+  "name": "dev",
+  "version": "1.0.0",
+  "description": "test",
+  "main": "index.js",
+  "repository": "https://github.com/OhYesLee/dev.git",
+  "author": "sung_uk <103974953+OhYesLee@users.noreply.github.com>",
+  "license": "MIT"
+}
