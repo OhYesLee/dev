@@ -1,5 +1,6 @@
 import puppeteer, { Dialog } from "puppeteer";
 import fs from "fs";
+import axios from "axios";
 
 const launchConfig = {
   headless: false,
@@ -73,27 +74,37 @@ const getPageLength = async () => {
 const getData = async () => {
   for (let i = 0; i < pageLength; i++) {
     await page.waitForSelector(lengthSelector);
-    const jsonData = await page.evaluate(() => {
-      const targetEl = document.querySelectorAll(
-        "#printZone > table:nth-child(2) > tbody > tr"
-      );
-      var data = Array.from(targetEl)
-        .map((el) => {
-          const tdArr = el.querySelectorAll("td");
-          const name = tdArr[1]?.innerText;
-          const addr = tdArr[2]?.innerText;
-          const tel = tdArr[3]?.innerText;
-          const open = tdArr[4]?.innerText;
-          return {
-            name,
-            addr,
-            tel,
-            open,
-          };
-        })
-        .filter((data) => data.name != undefined);
-      return data;
-    }); //end evaluate
+    const jsonData = await page.evaluate(
+      (sido, sigungu) => {
+        const targetEl = document.querySelectorAll(
+          "#printZone > table:nth-child(2) > tbody > tr"
+        );
+        var data = Array.from(targetEl)
+          .map((el) => {
+            const tdArr = el.querySelectorAll("td");
+            const name = tdArr[1]?.innerText;
+            const addr = tdArr[2]?.innerText
+              .replaceAll("\n", "")
+              .replaceAll("\t", "");
+            const tel = tdArr[3]?.innerText;
+            const open = tdArr[4]?.innerText
+              .replaceAll("\n", "")
+              .replaceAll("\t", "");
+            return {
+              name,
+              addr,
+              tel,
+              open,
+              sido,
+              sigungu,
+            };
+          })
+          .filter((data) => data.name != undefined);
+        return data;
+      },
+      sido,
+      sigungu
+    ); //end evaluate
 
     finalData = finalData.concat(jsonData);
     console.log("currentPage", i);
@@ -111,6 +122,21 @@ const getData = async () => {
   } //end loop
   browser.close();
 }; //end getData
+
+const getAddr = async () => {
+  const endpoint = "https://dapi.kakao.com/v2/local/search/address.json";
+  const result = await axios.get(endpoint, {
+    params: {
+      query: "(06025) 서울 강남구 논현로 842 1층",
+    },
+    headers: {
+      Authorization: "KakaoAK cebd1cb9f4f006f46fffda81279ee189",
+    },
+  });
+
+  const { x, y } = result.data.documents[0]?.address;
+  console.log(x, y);
+};
 
 const writefile = async () => {
   const writePath = `./json/${sido}`;
@@ -134,4 +160,5 @@ export {
   getPageLength,
   getData,
   writefile,
+  getAddr,
 };
