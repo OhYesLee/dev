@@ -19,7 +19,7 @@ let page;
 let sido, sigungu;
 const lengthSelector =
   "body > table:nth-child(2) > tbody > tr > td:nth-child(1) > table > tbody > tr > td:nth-child(2) > table > tbody > tr:nth-child(5) > td > table:nth-child(5) > tbody > tr:nth-child(4) > td > table > tbody > tr > td:nth-child(3)";
-let pageLength;
+// let pageLength;
 let finalData = [];
 //launch 는 페이지 가져오기
 const launch = async (sidoCode, sigunguCode) => {
@@ -63,13 +63,13 @@ const closeAlert = async () => {
   });
 };
 
-const getPageLength = async () => {
-  await page.waitForSelector(lengthSelector);
-  pageLength = await page.evaluate((lengthSelector) => {
-    return document.querySelector(lengthSelector).children.length;
-  }, lengthSelector);
-  console.log(pageLength);
-};
+// const getPageLength = async () => {
+//   await page.waitForSelector(lengthSelector);
+//   pageLength = await page.evaluate((lengthSelector) => {
+//     return document.querySelector(lengthSelector).children.length;
+//   }, lengthSelector);
+//   console.log(pageLength);
+// };
 
 const getData = async () => {
   const maxLength = 10;
@@ -78,6 +78,7 @@ const getData = async () => {
 
   while (condition) {
     await page.waitForSelector(lengthSelector);
+
     const jsonData = await page.evaluate(
       (sido, sigungu) => {
         const targetEl = document.querySelectorAll(
@@ -111,21 +112,38 @@ const getData = async () => {
     ); //end evaluate
 
     finalData = finalData.concat(jsonData);
-    console.log("currentPage", i);
-    if (i != pageLength) {
+    console.log("currentIndex", currentIndex);
+    const nextIndex = currentIndex % maxLength; //
+    // console.log("currentPage", i);
+    if (nextIndex != 0) {
+      //   console.log("currentPage", i, pageLength);
       //paging click
-      await page.evaluate(
-        (lengthSelector, i) => {
-          document.querySelector(lengthSelector).children[i].click();
+      const isLast = await page.evaluate(
+        (lengthSelector, nextIndex) => {
+          const target =
+            document.querySelector(lengthSelector).children[nextIndex];
+          if (!target) return true;
+          target.click();
         },
         lengthSelector,
-        i
-      );
+        nextIndex
+      ); //end evaluate
+      if (isLast) condition = false;
       await page.waitForSelector("#printZone");
+    } else {
+      await page.evaluate(() => {
+        document
+          .querySelector(
+            "body > table:nth-child(2) > tbody > tr > td:nth-child(1) > table > tbody > tr > td:nth-child(2) > table > tbody > tr:nth-child(5) > td > table:nth-child(5) > tbody > tr:nth-child(4) > td > table > tbody > tr > td:nth-child(5) > a"
+          )
+          .click();
+      });
     } //end if
+
+    currentIndex++;
   } // end while
 
-  for (let i = 0; i < pageLength; i++) {} //end loop
+  //   for (let i = 0; i < pageLength; i++) {} //end loop
   browser.close();
 }; //end getData
 
@@ -148,16 +166,18 @@ const getAddr = async (data) => {
   }
   return data;
 
-  const { x, y } = result.data.documents[0]?.address;
-  data.lng = x;
-  data.lng = y;
-  console.log(x, y);
+  //   const { x, y } = result.data.documents[0]?.address;
+  //   data.lng = x;
+  //   data.lng = y;
+  //   console.log(x, y);
 };
 
 const writefile = async () => {
-  const promiseArr = finalData.map((data) => getAddr(data));
-  // 1초 200개면 200초인데 동시에 1초~2초안에 끝나게 하는
-  finalData = await Promise.all(promiseArr);
+  //   const promiseArr = finalData.map((data) => getAddr(data));
+  //   // 1초 200개면 200초인데 동시에 1초~2초안에 끝나게 하는
+  //   finalData = await Promise.all(promiseArr);
+
+  //   finalData = await getAddr(finalData[0]);
 
   const writePath = `./json/${sido}`;
   const exist = fs.existsSync(`../json/${sido}`);
@@ -177,7 +197,7 @@ export {
   evalSido,
   evalSigungu,
   closeAlert,
-  getPageLength,
+  //   getPageLength,
   getData,
   writefile,
   getAddr,

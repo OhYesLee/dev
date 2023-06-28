@@ -5,7 +5,7 @@ import {
   evalSido,
   evalSigungu,
   closeAlert,
-  getPageLength,
+  //   getPageLength,
   getData,
   writefile,
   getAddr,
@@ -19,7 +19,7 @@ async function main() {
   await evalSido();
   await evalSigungu();
   await closeAlert();
-  await getPageLength();
+  //   await getPageLength();
   await getData();
   await writefile();
   process.exit(1);
