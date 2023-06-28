@@ -1,6 +1,8 @@
 import puppeteer, { Dialog } from "puppeteer";
 import fs from "fs";
 import axios from "axios";
+import _ from "lodash";
+// import testData from '../'
 
 const launchConfig = {
   headless: true,
@@ -142,8 +144,6 @@ const getData = async () => {
 
     currentIndex++;
   } // end while
-
-  //   for (let i = 0; i < pageLength; i++) {} //end loop
   browser.close();
 }; //end getData
 
@@ -159,7 +159,7 @@ const getAddr = async (data) => {
     },
   });
 
-  if (result.data.document.length > 0) {
+  if (result.data.documents.length > 0) {
     const { x, y } = result.data.documents[0].address;
     data.lng = x;
     data.lng = y;
@@ -171,8 +171,30 @@ const getAddr = async (data) => {
   //   data.lng = y;
   //   console.log(x, y);
 };
+function sleep(ms) {
+  return new Promise((r) => setTimeout(r, ms));
+}
 
 const writefile = async () => {
+  //   const jsonString = fs.readFileSync("./json/seoul/kangnam_gu.json");
+
+  const chunkData = _.chunk(JSON.parse(finalData), 50);
+  //[ [length =50], [], ...[]]
+
+  // [ [],[],[]]
+  let temp = [];
+  for (let i = 0; i < chunkData.length; i++) {
+    console.log("currentIndex", i);
+    const promiseArray = chunkData[i].map((data) => getAddr(data));
+    const resultArr = await Promise.all(promiseArray);
+    temp.push(resultArr);
+    await sleep(1500);
+  }
+
+  finalData = _.flatMap(temp);
+  //   console.log(_.flattenDeep(temp));
+  //   return;
+
   //   const promiseArr = finalData.map((data) => getAddr(data));
   //   // 1초 200개면 200초인데 동시에 1초~2초안에 끝나게 하는
   //   finalData = await Promise.all(promiseArr);
@@ -202,3 +224,5 @@ export {
   writefile,
   getAddr,
 };
+
+//shift option 마우스 클릭
