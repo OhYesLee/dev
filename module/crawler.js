@@ -3,7 +3,7 @@ import fs from "fs";
 import axios from "axios";
 
 const launchConfig = {
-  headless: false,
+  headless: true,
   defaultViewport: null,
   ignoreDefaultArgs: ["--disable-extensions"],
   args: [
@@ -72,7 +72,11 @@ const getPageLength = async () => {
 };
 
 const getData = async () => {
-  for (let i = 0; i < pageLength; i++) {
+  const maxLength = 10;
+  let currentIndex = 1;
+  let condition = true;
+
+  while (condition) {
     await page.waitForSelector(lengthSelector);
     const jsonData = await page.evaluate(
       (sido, sigungu) => {
@@ -109,6 +113,7 @@ const getData = async () => {
     finalData = finalData.concat(jsonData);
     console.log("currentPage", i);
     if (i != pageLength) {
+      //paging click
       await page.evaluate(
         (lengthSelector, i) => {
           document.querySelector(lengthSelector).children[i].click();
@@ -118,27 +123,42 @@ const getData = async () => {
       );
       await page.waitForSelector("#printZone");
     } //end if
-    console.log(jsonData);
-  } //end loop
+  } // end while
+
+  for (let i = 0; i < pageLength; i++) {} //end loop
   browser.close();
 }; //end getData
 
-const getAddr = async () => {
-  const endpoint = "https://dapi.kakao.com/v2/local/search/address.json";
-  const result = await axios.get(endpoint, {
+const getAddr = async (data) => {
+  const url = "https://dapi.kakao.com/v2/local/search/address.json";
+  //   const endpoint = "https://dapi.kakao.com/v2/local/search/address.json";
+  const result = await axios.get(url, {
     params: {
-      query: "(06025) 서울 강남구 논현로 842 1층",
+      query: data.addr,
     },
     headers: {
       Authorization: "KakaoAK cebd1cb9f4f006f46fffda81279ee189",
     },
   });
 
+  if (result.data.document.length > 0) {
+    const { x, y } = result.data.documents[0].address;
+    data.lng = x;
+    data.lng = y;
+  }
+  return data;
+
   const { x, y } = result.data.documents[0]?.address;
+  data.lng = x;
+  data.lng = y;
   console.log(x, y);
 };
 
 const writefile = async () => {
+  const promiseArr = finalData.map((data) => getAddr(data));
+  // 1초 200개면 200초인데 동시에 1초~2초안에 끝나게 하는
+  finalData = await Promise.all(promiseArr);
+
   const writePath = `./json/${sido}`;
   const exist = fs.existsSync(`../json/${sido}`);
 
