@@ -224,5 +224,6 @@ export {
   writefile,
   getAddr,
 };
-
+// 단축키 사용방법
+// 여러줄 선택 고치기
 //shift option 마우스 클릭
